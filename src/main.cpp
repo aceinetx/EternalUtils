@@ -7,6 +7,7 @@ using namespace geode::prelude;
 
 #include <format>
 #include <json.hpp>
+#include <thread>
 
 using json = nlohmann::json;
 
@@ -25,38 +26,68 @@ class $modify(EternalProfilePage, ProfilePage){
 
 	void getUserInfoFinished(GJUserScore* p0){
 		ProfilePage::getUserInfoFinished(p0);
+		cocos2d::CCNode* layer = (cocos2d::CCNode*)this->getChildren()->firstObject();
 
-		std::string rank = std::format("{} (!)", p0->m_globalRank);
+		std::string rank = std::format("Rank: {} (!)", p0->m_globalRank);
 
 		web::WebRequest req = web::WebRequest();
 		auto task = req.get(GITHUB_DATA_URL);
+
 		while(!task.isFinished());
 		if(task.getFinishedValue()->string().isOk()){
 			std::string result = task.getFinishedValue()->string().unwrap();
 
 			json data = json::parse(result);
 			json demonlist_scores = data["demonlist_scores"];
+			json challangelist_scores = data["challangelist_scores"];
+
+			rank = std::format("Rank: {} (Not on lists)", p0->m_globalRank);
+
+			int demonlist_points = -1;
+			int challangelist_points = -1;
+			int demonlist_place = -1;
+			int challangelist_place = -1;
 
 			for(int i=0; i<demonlist_scores.size(); i++){
 				std::string username = demonlist_scores[i][0].template get<std::string>();
 				int points = demonlist_scores[i][1].template get<int>();
 
 				if(username == p0->m_userName){
-					rank = std::format("{} (Demonlist: {})", p0->m_globalRank, points);
+					demonlist_points = points;
+					demonlist_place = i+1;
 				}
 			}
 
-		}
+			for(int i=0; i<challangelist_scores.size(); i++){
+				std::string username = challangelist_scores[i][0].template get<std::string>();
+				int points = challangelist_scores[i][1].template get<int>();
 
-		cocos2d::CCNode* layer = (cocos2d::CCNode*)this->getChildren()->firstObject();
+				if(username == p0->m_userName){
+					challangelist_points = points;
+					challangelist_place = i+1;
+				}
+			}
+
+			if(demonlist_points > -1 || challangelist_points > -1) rank = std::format("Rank: {}", p0->m_globalRank);
+			if(demonlist_points > -1){
+				rank.append(std::format(" (Demonlist | Place: {}, Points: {})", demonlist_place, demonlist_points));
+			}
+			if(challangelist_points > -1){
+				rank.append(std::format(" (Challangelist | Place: {}, Points: {})", challangelist_place, challangelist_points));
+			}
+		}
 		layer->removeChildByID("global-rank-label");
+		layer->removeChildByID("global-rank-hint");
+		layer->removeChildByID("global-rank-icon");
 
 		cocos2d::CCPoint rank_label_pos;
-		rank_label_pos.x = 160.5;
-		rank_label_pos.y = 277;
+		rank_label_pos.x = 280;
+		rank_label_pos.y = 270;
 
 
 		auto label = CCLabelBMFont::create(rank.c_str(), "chatFont.fnt");
-    layer->addChildAtPosition(label, Anchor::Center, rank_label_pos);
+		label->setPosition(rank_label_pos);
+		label->setScale(0.5);
+		layer->addChild(label);
 	}	
 };
