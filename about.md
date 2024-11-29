@@ -1,3 +1,3 @@
-# Template Mod
+# EternalUtils
 
-Edit about.md to change this
+A GD Mod for the eternal gdps

@@ -1,2 +1,3 @@
 # 1.0.0
-- Edit this file to change your mod's changelog.
+- Added demonlist & challange list place and points to the player profile
+- Added a demonlist place label to the level info page 
