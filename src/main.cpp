@@ -3,6 +3,7 @@
 using namespace geode::prelude;
 
 #include <Geode/modify/ProfilePage.hpp>
+#include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/utils/web.hpp>
 
 #include <format>
@@ -110,4 +111,70 @@ class $modify(EternalProfilePage, ProfilePage){
 		label->setID("rank-label");
 		layer->addChild(label);
 	}	
+};
+
+class $modify(EternalLevelInfoLayer, LevelInfoLayer){
+
+	struct Fields {
+		std::string level_name;
+		std::string level_date;
+		std::string level_creators;
+		int top;
+		bool is_eternal_level;
+	};
+
+	bool init(GJGameLevel* level, bool challange){
+		if(!LevelInfoLayer::init(level, challange)){
+			return false;
+		}
+		m_fields->is_eternal_level = false;
+
+		if(Eternal::canUseData){
+			json demonlist = Eternal::data["demonlist"];
+			for(int i=0; i<demonlist.size(); i++){
+				std::string level_name = demonlist[i][0];
+				std::string level_creators = demonlist[i][1];
+				std::string level_date = demonlist[i][2];
+
+				if(level_name == level->m_levelName){
+					m_fields->level_name = level_name;
+					m_fields->level_creators = level_creators;
+					m_fields->level_date = level_date;
+					m_fields->top = i+1;
+					m_fields->is_eternal_level = true;
+				}
+			}
+			if(!m_fields->is_eternal_level){
+				return true;
+			}
+
+			auto EternalTopMenu = CCMenu::create();
+			EternalTopMenu->setPosition({151, 171});
+			EternalTopMenu->setContentSize({64, 13});
+			EternalTopMenu->setID("eternal-top-menu");
+
+			auto label_spr = CCLabelBMFont::create(std::format("Top #{}", m_fields->top).c_str(), "chatFont.fnt");
+
+			auto label = CCMenuItemSpriteExtra::create(label_spr, EternalTopMenu, menu_selector(EternalLevelInfoLayer::onTopLabelClicked));
+			label->setPosition({33, 9});
+			label->setScale(0.6);
+			label->setID("top-label");
+			
+			EternalTopMenu->addChild(label);
+			this->addChild(EternalTopMenu);
+		}
+
+		return true;
+	}
+
+	void onTopLabelClicked(CCObject *sender){
+		this->getChildByIDRecursive("top-label")->setScale(0.6);
+		if(m_fields->is_eternal_level){
+			FLAlertLayer::create(
+				m_fields->level_name.c_str(),
+				std::format("Top: <cr>{}</c>\nClaimed it's top spot at: <cg>{}</c>\nCreators: <co>{}</c>", m_fields->top, m_fields->level_date, m_fields->level_creators),
+				"OK"
+			)->show();
+		}
+	}
 };
