@@ -23,6 +23,7 @@ namespace Eternal {
 	int level_creator_count;
 	int level_top;
 	bool is_eternal_level;
+	CCSize screen_size;
 }
 
 $on_mod(Loaded){
@@ -42,6 +43,7 @@ $on_mod(Loaded){
 	} else {
 		Notification::create("Eternal: failed to get data from github (Do you have internet connection?)", CCSprite::createWithSpriteFrameName("particle_193_001.png"), 2.0f)->show();
 	}
+	Eternal::screen_size = CCDirector::sharedDirector()->getWinSize();
 }
 
 class $modify(EternalProfilePage, ProfilePage){
@@ -108,7 +110,7 @@ class $modify(EternalProfilePage, ProfilePage){
 
 		// Create a new label
 		cocos2d::CCPoint rank_label_pos;
-		rank_label_pos.x = 280;
+		rank_label_pos.x = Eternal::screen_size.width/2;
 		rank_label_pos.y = 270;
 
 		auto label = CCLabelBMFont::create(rank.c_str(), "chatFont.fnt");
@@ -157,7 +159,7 @@ class $modify(EternalLevelInfoLayer, LevelInfoLayer){
 
 			// Create a menu for the top label (otherwise we wouldn't be able to click it)
 			auto EternalTopMenu = CCMenu::create();
-			EternalTopMenu->setPosition({151, 171});
+			EternalTopMenu->setPosition({this->getChildByIDRecursive("stars-label")->getPositionX(), 171});
 			EternalTopMenu->setContentSize({64, 13});
 			EternalTopMenu->setID("eternal-top-menu");
 
@@ -165,7 +167,7 @@ class $modify(EternalLevelInfoLayer, LevelInfoLayer){
 			auto label_spr = CCLabelBMFont::create(std::format("Top #{}", Eternal::level_top).c_str(), "chatFont.fnt");
 
 			auto label = CCMenuItemSpriteExtra::create(label_spr, EternalTopMenu, menu_selector(EternalLevelInfoLayer::onTopLabelClicked));
-			label->setPosition({33, 9});
+			label->setPosition({0, 9});
 			label->setScale(0.6);
 			label->setID("top-label");
 			
